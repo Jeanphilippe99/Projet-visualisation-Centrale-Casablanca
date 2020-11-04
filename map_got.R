@@ -1,0 +1,17 @@
+library(sf)
+library(ggplot2)
+continents = st_read("data/GoTRelease/Continents.shp", crs=4326)
+islands = st_read("data/GoTRelease/Islands.shp", crs=4326)
+lakes = st_read("data/GoTRelease/Lakes.shp", crs=4326)
+land = st_read("data/GoTRelease/Land.shp", crs=4326)
+landscape = st_read("data/GoTRelease/Landscape.shp", crs=4326)
+locations = st_read("data/GoTRelease/Locations.shp", crs=4326)
+political = st_read("data/GoTRelease/Political.shp", crs=4326)
+regions = st_read("data/GoTRelease/Regions.shp", crs=4326)
+rivers = st_read("data/GoTRelease/Rivers.shp", crs=4326)
+roads = st_read("data/GoTRelease/Roads.shp", crs=4326)
+scenesLocations = st_read("data/GoTRelease/ScenesLocations.shp", crs=4326)
+wall = st_read("data/GoTRelease/Wall.shp",crs=4326)
+
+mtq = continents$geometry
+plot(st_geometry(mtq)) + plot(st_geometry(locations$geometry))
