@@ -43,7 +43,7 @@ ui <- fluidPage(
             tags$br(),
             tags$i("Vous pouvez choisir un personnage pour voir ses lieux de scènes où l'endroit de sa mort si jamais."),
             selectInput("caractere","Nom du personnage",choices=caracteres$name),
-            actionButton("btnSaisonEpisodeCaract", "Afficher"),
+            actionButton("btnSaisonEpisodeCaract", "Afficher", class="btn"),
             
             #A propos
             tags$br(),
@@ -97,11 +97,16 @@ server <- function(input, output, session) {
                     paste("---------------! Donnée vide, rien à afficher !---------------")
                 })
             }
+            else {
+                output$alert <- renderText({
+                    paste("")
+                })
+            }
             A = st_read("data/GoTRelease/ScenesLocations.shp") #lecture des lieux visités par le caractère
             elt = A %>% inner_join(theData) #jointure sur location
         
             displayMap()
-            plot(st_geometry(elt), add=T, col=factor(elt$location), cex=elt$times, lwd=5)
+            plot(st_geometry(elt), add=T, col="red", cex=elt$times, lwd=5)
         })
     })
     
