@@ -14,3 +14,5 @@ plot(st_geometry(rivers), add=T, col="#2CD7F9", lwd=2)
 plot(st_geometry(landscape), add=T, col="#C4B4A1", lwd=1, border=0)
 #plot(st_geometry(regions), add=T)
 plot(st_geometry(roads), add=T, col="#70512C", lwd=2)
+
+#plot.window(xlim = c(1,2), ylim = c(1,10))

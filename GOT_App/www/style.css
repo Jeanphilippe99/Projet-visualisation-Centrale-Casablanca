@@ -1,0 +1,27 @@
+@import url("//fonts.googleapis.com/css?family=Lobster|Cabin:400,700");
+
+body {
+	background: #CBDFDD;
+}
+
+.titre {
+	font-size: 35px;
+	font-family: 'Lobster', cursive;
+	font-weight: 500;
+	line-height: 1.1;
+	color: #ad1d28;
+}
+
+header {
+	background: silver;
+	padding-top: 7px;
+	padding-bottom: 7px;
+	border-style: outset;
+	border-radius: 10px;
+	text-align: center;
+	margin-bottom: 15px;
+}
+
+i {
+	color: #ad1d28;
+}
