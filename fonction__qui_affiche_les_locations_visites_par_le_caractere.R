@@ -18,17 +18,35 @@ lieuVisite<-function(theSaison, theEpisode, theCaractere){
 }
 
 #exemple
-a=lieuVisite(1, 1, 'Gared')
+a=lieuVisite(1, 1, 'Will')
 
 #plotLieux : fonction qui prend une liste de lieux et renvoie la representation en couleurs
 plotLieux<-function(theData){
   #theData : tableau contenant les lieux avec le nombre de fois que ce lieu fu visité par un caractere bien precis (resultat de lieuVisite())
   library(sf)
   A = st_read("data/GoTRelease/ScenesLocations.shp")
-  elt = A %>% inner_join(c) #jointure sur location
+  elt = A %>% inner_join(theData) #jointure sur location
   
   plot(st_geometry(elt), col=factor(elt$location), cex=elt$times, lwd=5)
 }
 
 #exemple
-plotLieux(a)
+#plotLieux(a)
+
+
+lieuVisite2 <- function(theSaison, theEpisode, theCaractere){
+  elt = scenes %>% inner_join(episodes) %>% inner_join(appearances)
+  elt = elt[elt$seasonNum==theSaison,] #filtrer par la saison
+  elt = elt[elt$episodeId==theEpisode,] %>% filter(name==theCaractere) %>% group_by(location) %>% summarise(times=n()) #filtrer par l'épisode et nom du caractère
+  #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il a visité chaque location (times)
+  return(elt)
+}
+
+
+theData = lieuVisite(as.numeric("1"), as.numeric("1"), "Will")
+
+A = st_read("data/GoTRelease/ScenesLocations.shp")
+elt = A %>% inner_join(theData) #jointure sur location
+
+#displayMap()
+plot(st_geometry(elt), add=F, col=factor(elt$location), cex=elt$times, lwd=5)

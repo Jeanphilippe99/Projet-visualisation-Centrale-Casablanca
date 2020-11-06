@@ -1,0 +1,9 @@
+A Propos de l'application
+
+Cette application a été créée par des élèves de l'Ecole Centrale Casablanca dans le cadre d'une formation de visualisation de données.
+
+Auteurs et encadrant : 
+Josué Kouman, Jean-Philippe Kroko, Peidgy Adjoumani, Evariste Kouamé. 
+L'encadrant de la formation est Monsieur "son nom". 
+
+Ce projet a été créé le 06-11-2020.
