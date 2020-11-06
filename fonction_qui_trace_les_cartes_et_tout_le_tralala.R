@@ -1,0 +1,18 @@
+library(sf)
+continents = st_read("data/GoTRelease/Continents.shp")
+islands = st_read("data/GoTRelease/Islands.shp")
+lakes = st_read("data/GoTRelease/Lakes.shp")
+rivers = st_read("data/GoTRelease/Rivers.shp")
+landscape = st_read("data/GoTRelease/Landscape.shp")
+regions = st_read("data/GoTRelease/Regions.shp")
+roads = st_read("data/GoTRelease/Roads.shp")
+
+plot(st_geometry(continents), border=1+continents$id, cex=5)
+plot(st_geometry(islands), add=T, col="#CD887A")
+plot(st_geometry(lakes), add=T, col="#2CD7F9")
+plot(st_geometry(rivers), add=T, col="#2CD7F9", lwd=2)
+plot(st_geometry(landscape), add=T, col="#C4B4A1", lwd=1, border=0)
+#plot(st_geometry(regions), add=T)
+plot(st_geometry(roads), add=T, col="#70512C", lwd=2)
+
+#plot.window(xlim = c(1,2), ylim = c(1,10))
