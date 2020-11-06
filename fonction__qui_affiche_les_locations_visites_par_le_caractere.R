@@ -31,22 +31,18 @@ plotLieux<-function(theData){
 }
 
 #exemple
-#plotLieux(a)
+plotLieux(a)
 
 
-lieuVisite2 <- function(theSaison, theEpisode, theCaractere){
-  elt = scenes %>% inner_join(episodes) %>% inner_join(appearances)
+#lieuMort : fonction qui prend la saison, l'épisode et renvoie la liste des lieux où il y'a eu des morts
+lieuMort <- function(theSaison, theEpisode){
+  elt = scenes %>% inner_join(episodes)
+  elt = elt[elt$nbdeath>0,] #on garde la data où il y'a des morts
   elt = elt[elt$seasonNum==theSaison,] #filtrer par la saison
-  elt = elt[elt$episodeId==theEpisode,] %>% filter(name==theCaractere) %>% group_by(location) %>% summarise(times=n()) #filtrer par l'épisode et nom du caractère
-  #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il a visité chaque location (times)
+  elt = elt[elt$episodeNum==theEpisode,] %>% group_by(location) %>% summarise(morts=n()) #morts=nbr de morts par lieu
+  #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il y a eu des morts dans ce lieu au cours de la saison et de l'épisode
   return(elt)
 }
 
-
-theData = lieuVisite(as.numeric("1"), as.numeric("1"), "Will")
-
-A = st_read("data/GoTRelease/ScenesLocations.shp")
-elt = A %>% inner_join(theData) #jointure sur location
-
-#displayMap()
-plot(st_geometry(elt), add=F, col=factor(elt$location), cex=elt$times, lwd=5)
+#exemple
+c=lieuMort(1,1)
