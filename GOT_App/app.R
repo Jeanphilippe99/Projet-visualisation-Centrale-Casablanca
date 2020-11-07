@@ -5,12 +5,13 @@
 #    http://shiny.rstudio.com/
 
 library(shiny)
+library(shinyalert)
+library(shinycssloaders)
 library(sf)
 library(readr)
 library(ggplot2)
 library(dplyr)
 library(ggiraph)
-library(shinycssloaders)
 #lecture des données
 #continents = st_read("data/GoTRelease/Continents.shp")
 #islands = st_read("data/GoTRelease/Islands.shp")
@@ -39,6 +40,8 @@ wall = st_read("data/GoTRelease/Wall.shp",crs=4326)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
+    useShinyalert(), #alert pour afficher à propos (en cliquant sur le lien (actionLink) ci-dessous)
+    
     tags$head(
         tags$link(rel = "stylesheet", type = "text/css", href = "style.css") #on utilise un fichier CSS externe (dans le dossier www)
     ),
@@ -66,7 +69,7 @@ ui <- fluidPage(
             #A propos
             tags$br(),
             tags$br(),
-            actionLink("aPropos", "A Propos")
+            actionLink("aPropos", "A Propos") #bouton de type link qui affiche le poppup
         ),
 
         mainPanel(
@@ -145,6 +148,65 @@ server <- function(input, output, session) {
         
         #ggiraph(code = print(my_gg))
         return(my_gg)
+        
+       'montains = landscape %>%  filter(type=="montain")
+        forests = landscape %>%  filter(type=="forest")
+        swamp = landscape %>%  filter(type=="swamp")
+        stepp = landscape %>%  filter(type=="stepp")
+        
+        map = ggplot()+geom_sf(data=continents$geometry,fill="ivory",color="ivory3")
+        
+        map=ggplot(locations)+geom_sf(data=continents$geometry,fill="ivory",color="ivory3")+
+            geom_sf(data = islands$geometry, fill="ivory",color="ivory3") +
+            geom_sf(data = forests$geometry, fill="green",color="ivory")+   
+            geom_sf(data = montains$geometry, fill="#CCCCCC",color="ivory")+ 
+            geom_sf(data = swamp$geometry, fill="#669999",color="ivory")+ 
+            geom_sf(data = stepp$geometry, fill="#669933",color="ivory")+
+            geom_sf(data = lakes$geometry, fill="#33CCFF",color="black")+ 
+            geom_sf(data = rivers$geometry, fill="#00CCFF",color="blue")+ 
+            geom_sf(data = roads$geometry, fill="#666666",color="#666666")
+        
+        mapLocation = map +
+            geom_sf(data = locations$geometry, fill="#FFCCCC",color="#FFCCCC")
+        
+        my_gg <- mapLocation + geom_sf_interactive(aes(tooltip = name), size = 2)
+        
+        ggiraph(code = print(my_gg))
+        
+        locations = locations %>% relocate(type, .after = name)
+        
+        continentType = data.frame ("type" = rep("continent", length(continents$id)))
+        islandType = data.frame("type" = rep("island", length(islands$id)))
+        lakesType = data.frame("type" = rep("lakes", length(lakes$id)))
+        riverType = data.frame("type" = rep("rivers", length(rivers$id)))
+        roadsType = data.frame("type" = rep("roads", length(roads$id)))
+        wallType = data.frame("type" = rep("wall", length(wall$id)))
+        policalType = data.frame("type" = rep("political", length(political$id)))
+        
+        allDatas = bind_rows(bind_cols(continents, continentType),
+                             bind_cols(islands, islandType),
+                             landscape,
+                             bind_cols(rivers, riverType),
+                             bind_cols(lakes, lakesType),
+                             bind_cols(roads, roadsType),
+                             bind_cols(wall, wallType),
+                             locations
+        )
+        
+        spaces = c("continent","forest","mountain","stepp","swamp","lakes","rivers","roads","islands","Castle","city","Other","Ruin","Town","wall","political","desert","land","shore","water")
+        
+        cols = c("ivory","green","#gray88","#669933","#669999","blue","#00CCFF","gray0","lightgoldenrod1","red","black","lightskyblue4","slategray4","lightyellow1","#CCCCCC","orangered3","orange3","moccasin","royalblue","#33CCFF")
+        
+        names(cols) = spaces
+        
+        levels(allDatas$type) = spaces
+        map = ggplot(allDatas) + geom_sf(aes(fill=type), size = 0.1)+
+            geom_sf(data = locations, fill="black", color = "black")+
+            geom_sf_interactive(data=locations, aes(tooltip = name), size = 2)
+        
+        ggiraph(code = print(map))'
+        
+        return(my_gg) #on utilisera plot(map) pour tracer le graphe. (le but est de pouvoir ajouter un ggplot dessus avant de plot plus tard)
     }
     
     #lieuVisite : fonction qui prend la saison, l'épisode, le caractère et renvoie la liste des lieux visités par celui-ci
@@ -230,11 +292,25 @@ server <- function(input, output, session) {
         plot(displayMap())
     })
     
-    #A Propos (affichage)
+    #A Propos (affichage mode modal (popup))
     observeEvent(input$aPropos, {
-        output$aProposText <- renderText({
-            read_file("www/a-propos.txt") #texte à propos
-        })
+        shinyalert(
+            title = "About",
+            #text = read_file("www/a-propos_.html"), #texte à propos
+            text = readLines("www/a-propos.html"),
+            size = "s", 
+            closeOnEsc = TRUE,
+            closeOnClickOutside = TRUE,
+            html = TRUE,
+            type = "info",
+            showConfirmButton = TRUE,
+            showCancelButton = FALSE,
+            confirmButtonText = "OK",
+            confirmButtonCol = "#AEDEF4",
+            timer = 0,
+            imageUrl = "",
+            animation = TRUE
+        )
     })
 }
 
