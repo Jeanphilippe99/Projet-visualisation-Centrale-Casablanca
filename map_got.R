@@ -56,7 +56,7 @@ cols = c(
   "cyan4",
   "blue",
   "cyan3",
-  "gray1",
+  "darkgray",
   "gold",
   "black",
   "gold4",
@@ -79,7 +79,6 @@ levels(allDatas$type) = spaces
 displayMap = function(layerGeometry=NA, layerCol="red", layerFill="red") {
   map = ggplot(allDatas) + geom_sf(aes(fill = type), size = 0.1) +
     geom_sf(data = locations,fill = "black",color = "black") +
-    
     scale_fill_manual("Lands category", values = cols) +
     theme_minimal() +
     geom_sf_interactive(data = locations, aes(tooltip = name), size = 2) +
