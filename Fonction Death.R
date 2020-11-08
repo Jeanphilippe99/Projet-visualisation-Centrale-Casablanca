@@ -22,5 +22,4 @@ death=function(x,y){
   return(deathLoc)
 }
 
-
   

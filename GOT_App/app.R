@@ -58,13 +58,16 @@ ui <- fluidPage(
             #Quand la saison change, le nombre d'épisodes change aussi. Donc c'est "observe" dans la partie server qui s'en charge
             selectInput("episode","Episode",choices=episodes$episodeNum[episodes$seasonNum==1],selected=1),
             radioButtons("mortsOuScenes","Voir les lieux des morts ou des scènes",choices=c("Scènes","Morts")),
+            tags$i("NB : ce bouton prend en compte la saison et l'épisode"),
+            tags$br(),
             actionButton("btnSaisonEpisode", "Afficher"),
             
             tags$br(),
             tags$i("Vous pouvez choisir un personnage pour voir ses lieux de scènes où l'endroit de sa mort si jamais."),
             #quand la saison et l'épisode change, la liste de personnages change aussi (seul ceux qui ont participé)
             selectInput("caractere","Nom du personnage",choices=caracteres$name),
-            actionButton("btnSaisonEpisodeCaract", "Afficher", class="btn"),
+            tags$i("NB : ce bouton prend en compte la saison, l'épisode et le personnage"),
+            actionButton("btnSaisonEpisodeCaract", "Afficher pour ce personnage", class="btn"),
             
             #A propos
             tags$br(),
@@ -76,6 +79,7 @@ ui <- fluidPage(
             ggiraphOutput("GoTmap") %>% withSpinner(color="#ad1d28", color.background="#CBDFDD", size=2),
             textOutput("alert"), #message d'alerte (ex: s'il n'y a pas de données à afficher on le signale)
             textOutput("alert2"),
+            tableOutput("table"),
             textOutput("aProposText")
         )
     )
@@ -124,36 +128,48 @@ server <- function(input, output, session) {
     })
     
     #fonction qui affiche la MAP de GoT (continents, lacs, îls, routes ...)
-    displayMap <- function(){ #la fonction retourne la data sf à ploter, mais ne fait aucun affichage (cela permet après d'ajouter d'autres données vant de plot)
-        continentType = data.frame ("type" = rep("continent", length(continents$id)))
-        islandType = data.frame("type" = rep("island", length(islands$id)))
-        lakesType = data.frame("type" = rep("lakes", length(lakes$id)))
-        riverType = data.frame("type" = rep("rivers", length(rivers$id)))
-        roadsType = data.frame("type" = rep("roads", length(roads$id)))
-        wallType = data.frame("type" = rep("wall", length(wall$id)))
-        policalType = data.frame("type" = rep("political", length(political$id)))
+    displayMap = function(layerGeometry=NA, layerCol="red", layerFill="red") {
+        #' creation d'une dataframe contenant toutes les datas utiles.
+        #' Pour pouvoir reconnaitre les differentes datas, ajout de l'attribut type
+        continents$type="continent"
+        islands$type="island"
+        lakes$type="lake"
+        rivers$type="river"
+        roads$type="road"
+        wall$type="wall"
         
-        allDatas = bind_rows(bind_cols(continents, continentType),
-                             bind_cols(islands, islandType),
-                             landscape,
-                             bind_cols(rivers, riverType),
-                             bind_cols(lakes, lakesType),
-                             bind_cols(roads, roadsType),
-                             bind_cols(wall, wallType),
-                             locations
-        )
         
-        spaces = c("continent","forest","mountain","stepp","swamp","lakes","rivers","roads","islands","Castle","city","Other","Ruin","Town","wall","political","desert","land","shore","water")
+        allDatas = bind_rows( continents,islands, landscape, rivers,lakes,roads,wall)
         
-        cols = c("ivory","green","#gray88","#669933","#669999","blue","#00CCFF","gray0","lightgoldenrod1","red","black","lightskyblue4","slategray4","lightyellow1","#CCCCCC","orangered3","orange3","moccasin","royalblue","#33CCFF")
+        spaces = c("continent","forest","mountain","stepp","swamp","lake","river","road","island","location","wall","political","desert","land","shore","water")
+        
+        cols = c("ivory","green","gray88","#669933","cyan4","blue","cyan3","gray1","gold","black","gold4","orangered3","darkgoldenrod1","gray","yellow","#33CCFF")
+        
         
         names(cols) = spaces
-        
         levels(allDatas$type) = spaces
-        map = ggplot(allDatas) + geom_sf(aes(fill=type), size = 0.1) + geom_sf(data = locations, fill="black", color = "black") + geom_sf_interactive(data=locations, aes(tooltip = name), size = 2)
         
-        #ggiraph(code = print(map))
+        #'\code{displayMap} Consruire la map de got en fonction
+        #'@param layerGeometry la couche donc la g?ometrie sera ajout?e et
+        #'@param layerCol pour fixer la couleur de la couche
+        #'@param layerFill pour fixer la couleur du remplissage
+        #'@return une novelle map
         
+        map = ggplot(allDatas) + geom_sf(aes(fill = type), size = 0.1) +
+            geom_sf(data = locations,fill = "black",color = "black") +
+            
+            scale_fill_manual("Lands category", values = cols) +
+            theme_minimal() +
+            geom_sf_interactive(data = locations, aes(tooltip = name), size = 2) +
+            geom_sf_text(
+                data = allDatas %>% filter(type == "continent"),
+                aes(label = name),
+                color = "red",
+                fontface = "bold"
+            )
+        if(!is.na(layerGeometry)){map = map + geom_sf(data = layerGeometry, 
+                                                      fill= layerFill,
+                                                      color = layerCol) }
         return(map) #on utilisera plot(map) pour tracer le graphe. (le but est de pouvoir ajouter un ggplot dessus avant de plot plus tard)
     }
     
@@ -161,8 +177,8 @@ server <- function(input, output, session) {
     lieuVisite <- function(theSaison, theEpisode, theCaractere){
         elt = scenes %>% inner_join(episodes) %>% inner_join(appearances)
         elt = elt[elt$seasonNum==theSaison,] #filtrer par la saison
-        elt = elt[elt$episodeId==theEpisode,] %>% filter(name==theCaractere) %>% group_by(location) %>% summarise(times=n()) #filtrer par l'épisode et nom du caractère
-        #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il a visité chaque location (times)
+        elt = elt[elt$episodeId==theEpisode,] %>% filter(name==theCaractere) %>% group_by(location) %>% summarise(nbr_scenes=n()) #filtrer par l'épisode et nom du caractère
+        #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il a visité chaque location (nbr_scenes)
         return(elt)
     }
     
@@ -176,31 +192,50 @@ server <- function(input, output, session) {
         return(elt)
     }
     
+    #fonction qui prend la saison et l'épisode et renvoie les lieux où les scènes ont été tournées
+    lieuScene <- function(theSaison, theEpisode){
+        elt = scenes %>% inner_join(episodes)
+        elt = elt[elt$seasonNum==theSaison,]
+        elt = elt[elt$episodeNum==theEpisode,] %>% group_by(location) %>% summarise(nbr_scenes=n()) #times est le nbr de fois que location apparait
+        #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il y a eu des scènes dans ce lieu (nbr_scenes)
+        return(elt)
+    }
+    
     #Bouton qui affiche les lieux des scènes et des morts (1er bouton)
     observeEvent(input$btnSaisonEpisode, {
-        output$GoTmap <- renderggiraph(
-            if (input$mortsOuScenes=="Scènes"){
-                
-                ggiraph(code = print(displayMap()))
-                
-                output$alert <- renderText({
-                    paste("-----! Affichage des lieux de scènes selon la saison et l'épisode !-----")
-                })
-            }
-            else { #else Morts
-                theData = lieuMort(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction lieuMort
-                
-                A = st_read("data/GoTRelease/ScenesLocations.shp", crs=4326) #lecture des lieux des morts
-                elt = A %>% inner_join(theData) #jointure sur location
-                
-                B = displayMap() + geom_sf(data=elt, fill="red", color="red", size=5)
+        if (input$mortsOuScenes=="Scènes"){
+            output$alert <- renderText({paste("-----! Affichage des lieux de toutes les scènes selon la saison et l'épisode !-----")})
+            output$alert2 <- renderText({paste("")}) #on efface le contenu de "alert2" car rien à afficher à ce endroit
+            
+            #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
+            theData = lieuScene(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction lieuMort
+            A = st_read("data/GoTRelease/ScenesLocations.shp", crs=4326) #lecture des lieux des morts
+            elt = A %>% inner_join(theData) #jointure sur location
+            
+            B = displayMap() + geom_sf(data=elt, fill="red", color="red", size=5)
+            output$GoTmap <- renderggiraph(
                 ggiraph(code = print(B))
-                
-                output$alert <- renderText({
-                    paste("-----! Affichage des lieux des morts selon la saison et l'épisode !-----")
-                })
-            }
-        )
+            )
+            
+            output$alert <- renderText({paste("-----! Affichage des lieux de toutes les morts selon la saison et l'épisode !-----")})
+            output$alert2 <- renderText({paste("")})
+            output$table <- renderTable(theData) #affichage en tableau
+        }
+        else { #Morts
+            #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
+            theData = lieuMort(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction lieuMort
+            A = st_read("data/GoTRelease/ScenesLocations.shp", crs=4326) #lecture des lieux des morts
+            elt = A %>% inner_join(theData) #jointure sur location
+            
+            B = displayMap() + geom_sf(data=elt, fill="red", color="red", size=as.numeric(theData$morts)+2)
+            output$GoTmap <- renderggiraph(
+                ggiraph(code = print(B))
+            )
+            
+            output$alert <- renderText({paste("-----! Affichage des lieux de toutes les morts selon la saison et l'épisode !-----")})
+            output$alert2 <- renderText({""}) #affichage des noms des lieux
+            output$table <- renderTable(theData) #affichage en tableau
+        }
     })
     
     #Bouton qui affiche les lieux des scènes du caractère choisi (2ème bouton)
@@ -212,14 +247,14 @@ server <- function(input, output, session) {
                     output$alert <- renderText({
                         paste("-----! Donnée vide, rien à afficher !-----")
                     })
+                    output$alert2 <- renderText({paste("Il se peut que la base de données ne contient pas d'information à ce sujet")})
                 }
                 else {
                     output$alert <- renderText({
                         paste("Lieux des scènes de", input$caractere, "dans la saison", input$saison, "et épisode", input$episode, sep=" ")
                     })
-                    output$alert2 <- renderText({
-                        paste(theData$location, sep=" --- ")
-                    })
+                    output$alert2 <- renderText({paste("")})
+                    output$table <- renderTable(theData) #affichage en tableau
                 }
                 A = st_read("data/GoTRelease/ScenesLocations.shp", crs=4326) #lecture des lieux visités par le caractère
                 elt = A %>% inner_join(theData) #jointure sur location
@@ -232,11 +267,14 @@ server <- function(input, output, session) {
                     output$alert <- renderText({
                         paste("-----! Cette personne n'a pas connu la mort !-----")
                     })
+                    output$alert2 <- renderText({paste("")})
+                    
                 }
                 else { #personnage tué
                     output$alert <- renderText({
                         paste("-----! Personnage tué par", caracteres[caracteres$name==input$caractere,]$killedBy, "!-----", sep=" ")
                     })
+                    output$alert2 <- renderText({paste("NB : impossible d'afficher le lieu de sa mort car information inconnue")})
                 }
                 ggiraph(code = print(displayMap())) #affichage map de base
             }

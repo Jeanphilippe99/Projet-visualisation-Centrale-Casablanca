@@ -34,6 +34,15 @@ plotLieux<-function(theData){
 plotLieux(a)
 
 
+#fonction qui prend la saison et l'épisode et renvoie les lieux où les scènes ont été tournées
+lieuScene <- function(theSaison, theEpisode){
+  elt = scenes %>% inner_join(episodes)
+  elt = elt[elt$seasonNum==theSaison,]
+  elt = elt[elt$episodeNum==theEpisode,] %>% group_by(location) %>% summarise(times=n()) #times est le nbr de fois que location apparait
+  #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il y a eu des scènes dans ce lieu (times)
+  return(elt)
+}
+
 #lieuMort : fonction qui prend la saison, l'épisode et renvoie la liste des lieux où il y'a eu des morts
 lieuMort <- function(theSaison, theEpisode){
   elt = scenes %>% inner_join(episodes)
