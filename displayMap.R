@@ -1,20 +1,5 @@
-library(sf)
-library(ggplot2)
-library(dplyr)
-library(ggiraph)
+source("importFilesAndDatas.R")
 library(roxygen2)
-
-#' import de la base de données
-
-continents = st_read("data/GoTRelease/Continents.shp", crs = 4326)
-islands = st_read("data/GoTRelease/Islands.shp", crs = 4326)
-lakes = st_read("data/GoTRelease/Lakes.shp", crs = 4326)
-landscape = st_read("data/GoTRelease/Landscape.shp", crs = 4326)
-locations = st_read("data/GoTRelease/Locations.shp", crs = 4326)
-rivers = st_read("data/GoTRelease/Rivers.shp", crs = 4326)
-roads = st_read("data/GoTRelease/Roads.shp", crs = 4326)
-wall = st_read("data/GoTRelease/Wall.shp", crs = 4326)
-
 
 #' creation d'une dataframe contenant toutes les datas utiles.
 #' Pour pouvoir reconnaitre les differentes datas, ajout de l'attribut type
@@ -25,7 +10,6 @@ lakes$type="lake"
 rivers$type="river"
 roads$type="road"
 wall$type="wall"
-
 
 allDatas = bind_rows( continents,islands, landscape, rivers,lakes,roads,wall)
 
@@ -91,6 +75,6 @@ displayMap = function(layerGeometry=NA, layerCol="red", layerFill="red") {
   if(!is.na(layerGeometry)){map = map + geom_sf(data = layerGeometry, 
                                                 fill= layerFill,
                                                 color = layerCol) }
-  return (ggiraph(code = print(map)))
+  return (map)
 }
-displayMap()
+
