@@ -1,24 +1,25 @@
 source("importFilesAndDatas.R")
 
-#' getSeason est une fonction qui retourne les épisodes de la saison avec numSeas
+#' getEpisodes est une fonction qui retourne les épisodes de la saison avec numSeas
 #' comme paramètre correspondant � la saison en questio
 
-getSeason <- function(numSeas) {
+
+getEpisodes <- function(numSeas) {
   A <- episodes[episodes$seasonNum == numSeas, ]
-  #A$idAndTitle = past(A$episodeNum, A$episodeTitle, sep=" ")
+  
   #liste_episodes <- A$episodeNum
   #liste_Id <- A$episodeId
   #return (as.data.frame(A))
   return (A)
 }
-#getSeason(3)$episodeTitle
+
 
 #'\code{getCharacters} '@return list of characters in episode according
 #'@param numseas season number and
 #'@param numEpisode episode number
 
 getCharacters <- function(x, y) {
-  D <- getSeason(x)
+  D <- getEpisodes(x)
   D <- D[D$episodeNum == y, ]
   D <- D$episodeId
   liste_scenes <-

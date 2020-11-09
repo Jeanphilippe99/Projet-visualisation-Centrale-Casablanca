@@ -6,10 +6,13 @@
 
 source("getCharacters.R")
 source("displayMap.R")
+source("localizeFunctions.R")
+
 library(shiny)
 library(shinyalert)
 library(shinycssloaders)
 
+#episodes$idAndTitle <- paste(episodes$episodeNum, episodes$episodeTitle, sep=" ")
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   useShinyalert(),
@@ -62,7 +65,9 @@ ui <- fluidPage(
         "Vous pouvez choisir un personnage pour voir ses lieux de scènes où l'endroit de sa mort si jamais."
       ),
       #quand la saison et l'épisode change, la liste de personnages change aussi (seul ceux qui ont participé)
-      selectInput("caractere", "Nom du personnage", choices = caracteres$name),
+      selectInput("caractere", 
+                  "Nom du personnage", 
+                  choices = caracteres$name),
       tags$i("NB : ce bouton prend en compte la saison, l'épisode et le personnage"),
       actionButton("btnSaisonEpisodeCaract", "Afficher pour ce personnage", class =
                      "btn"),
@@ -92,7 +97,8 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   #maj des données du select de episode en fonction de la saison choisie
   observe({
-    a = input$saison #on récupère la saison selectionnée afin de trouver les épisodes (toutes les saisons n'ont pas même nbr d'épisodes)
+    #on récupère la saison selectionnée afin de trouver les épisodes (toutes les saisons n'ont pas même nbr d'épisodes)
+    a = input$saison 
     updateSelectInput(session,
                       "episode",
                       "Choisir l'épisode",
@@ -103,46 +109,13 @@ server <- function(input, output, session) {
   
   #maj des données du select de personnage (car chaque saison et épisode à ses personnages)
   observe({
-    a = input$saison #on récupère la saison selectionnée afin de trouver les épisodes (toutes les saisons n'ont pas même nbr d'épisodes)
-    b = input$episode
     updateSelectInput(session,
                       "caractere",
                       "Nom du personnage",
-                      choices = getCharacters(as.numeric(input$saison), as.numeric(input$episode)))
+                      choices = getCharacters(as.numeric(input$saison), 
+                                              as.numeric(input$episode)))
     #updateSelectInput(episode, "User", choices = as.character(dat5[dat5$email==input$Select, date]))
   })
-  
-  
-  #lieuVisite : fonction qui prend la saison, l'épisode, le caractère et renvoie la liste des lieux visités par celui-ci
-  lieuVisite <- function(theSaison, theEpisode, theCaractere) {
-    elt = scenes %>% inner_join(episodes) %>% inner_join(appearances)
-    elt = elt[elt$seasonNum == theSaison, ] #filtrer par la saison
-    elt = elt[elt$episodeId == theEpisode, ] %>% filter(name == theCaractere) %>% group_by(location) %>% summarise(nbr_scenes =
-                                                                                                                     n()) #filtrer par l'épisode et nom du caractère
-    #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il a visité chaque location (nbr_scenes)
-    return(elt)
-  }
-  
-  #lieuMort : fonction qui prend la saison, l'épisode et renvoie la liste des lieux où il y'a eu des morts
-  lieuMort <- function(theSaison, theEpisode) {
-    elt = scenes %>% inner_join(episodes)
-    elt = elt[elt$nbdeath > 0, ] #on garde la data où il y'a des morts
-    elt = elt[elt$seasonNum == theSaison, ] #filtrer par la saison
-    elt = elt[elt$episodeNum == theEpisode, ] %>% group_by(location) %>% summarise(morts =
-                                                                                     n()) #morts=nbr de morts par lieu
-    #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il y a eu des morts dans ce lieu au cours de la saison et de l'épisode
-    return(elt)
-  }
-  
-  #fonction qui prend la saison et l'épisode et renvoie les lieux où les scènes ont été tournées
-  lieuScene <- function(theSaison, theEpisode) {
-    elt = scenes %>% inner_join(episodes)
-    elt = elt[elt$seasonNum == theSaison, ]
-    elt = elt[elt$episodeNum == theEpisode, ] %>% group_by(location) %>% summarise(nbr_scenes =
-                                                                                     n()) #times est le nbr de fois que location apparait
-    #NB : pendant le filtrage, on ne repete pas les locations qui se repetent, mais on compte le nombre de fois qu'il y a eu des scènes dans ce lieu (nbr_scenes)
-    return(elt)
-  }
   
   #Bouton qui affiche les lieux des scènes et des morts (1er bouton)
   observeEvent(input$btnSaisonEpisode, {
@@ -159,7 +132,7 @@ server <- function(input, output, session) {
         }) #on efface le contenu de "alert2" car rien à afficher à ce endroit
       
       #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
-      theData = lieuScene(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction lieuMort
+      theData = getLocations(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction getDeathLocations
       A = st_read("data/GoTRelease/ScenesLocations.shp", crs = 4326) #lecture des lieux des morts
       elt = A %>% inner_join(theData) #jointure sur location
       
@@ -186,7 +159,7 @@ server <- function(input, output, session) {
     else {
       #Morts
       #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
-      theData = lieuMort(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction lieuMort
+      theData = getDeathLocations(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction getDeathLocations
       A = st_read("data/GoTRelease/ScenesLocations.shp", crs = 4326) #lecture des lieux des morts
       elt = A %>% inner_join(theData) #jointure sur location
       
@@ -215,81 +188,83 @@ server <- function(input, output, session) {
   
   #Bouton qui affiche les lieux des scènes du caractère choisi (2ème bouton)
   observeEvent(input$btnSaisonEpisodeCaract, {
-    output$GoTmap <- renderggiraph(if (input$mortsOuScenes == "Scènes") {
-      theData = lieuVisite(as.numeric(input$saison),
-                           as.numeric(input$episode),
-                           input$caractere) #appelle de la fonction lieuVisite
-      if (nrow(theData) < 1) {
-        #theData est vide (i.e en fonction de la saison, de l'épisode et du perso choisi, il n'y a pas de lieu à afficher)
-        output$alert <- renderText({
-          paste("-----! Donnée vide, rien à afficher !-----")
-        })
-        output$alert2 <-
-          renderText({
-            paste("Il se peut que la base de données ne contient pas d'information à ce sujet")
+    output$GoTmap <-
+      renderggiraph(if (input$mortsOuScenes == "Scènes") {
+        theData = getPathCharacter(as.numeric(input$saison),
+                             as.numeric(input$episode),
+                             input$caractere) #appelle de la fonction getPathCharacter
+        if (nrow(theData) < 1) {
+          #theData est vide (i.e en fonction de la saison, de l'épisode et du perso choisi, il n'y a pas de lieu à afficher)
+          output$alert <- renderText({
+            paste("-----! Donnée vide, rien à afficher !-----")
           })
-      }
-      else {
-        output$alert <- renderText({
-          paste(
-            "Lieux des scènes de",
-            input$caractere,
-            "dans la saison",
-            input$saison,
-            "et épisode",
-            input$episode,
-            sep = " "
-          )
-        })
-        output$alert2 <- renderText({
-          paste("")
-        })
-        output$table <-
-          renderTable(theData) #affichage en tableau
-      }
-      A = st_read("data/GoTRelease/ScenesLocations.shp", crs =
-                    4326) #lecture des lieux visités par le caractère
-      elt = A %>% inner_join(theData) #jointure sur location
-      
-      B = displayMap() + geom_sf(
-        data = elt,
-        fill = "red",
-        color = "red",
-        size = 5
-      )
-      ggiraph(code = print(B))
-    }
-    else {
-      #else Morts
-      if (is.na(caracteres[caracteres$name == input$caractere, ]$killedBy)) {
-        #personnage non tué
-        output$alert <- renderText({
-          paste("-----! Cette personne n'a pas connu la mort !-----")
-        })
-        output$alert2 <- renderText({
-          paste("")
-        })
+          output$alert2 <-
+            renderText({
+              paste("Il se peut que la base de données ne contient pas d'information à ce sujet")
+            })
+        }
+        else {
+          output$alert <- renderText({
+            paste(
+              "Lieux des scènes de",
+              input$caractere,
+              "dans la saison",
+              input$saison,
+              "et épisode",
+              input$episode,
+              sep = " "
+            )
+          })
+          output$alert2 <- renderText({
+            paste("")
+          })
+          output$table <-
+            renderTable(theData) #affichage en tableau
+        }
+        A = st_read("data/GoTRelease/ScenesLocations.shp", crs =
+                      4326) #lecture des lieux visités par le caractère
+        elt = A %>% inner_join(theData) #jointure sur location
         
+        B = displayMap() + geom_sf(
+          data = elt,
+          fill = "red",
+          color = "red",
+          size = 5
+        )
+        ggiraph(code = print(B))
       }
       else {
-        #personnage tué
-        output$alert <- renderText({
-          paste("-----! Personnage tué par",
-                caracteres[caracteres$name == input$caractere, ]$killedBy,
-                "!-----",
-                sep = " ")
-        })
-        output$alert2 <-
-          renderText({
-            paste("NB : impossible d'afficher le lieu de sa mort car information inconnue")
+        #else Morts
+        if (is.na(caracteres[caracteres$name == input$caractere,]$killedBy)) {
+          #personnage non tué
+          output$alert <- renderText({
+            paste("-----! Cette personne n'a pas connu la mort !-----")
           })
-      }
-      ggiraph(code = print(displayMap())) #affichage map de base
-    })
+          output$alert2 <- renderText({
+            paste("")
+          })
+          
+        }
+        else {
+          #personnage tué
+          output$alert <- renderText({
+            paste("-----! Personnage tué par",
+                  caracteres[caracteres$name == input$caractere,]$killedBy,
+                  "!-----",
+                  sep = " ")
+          })
+          output$alert2 <-
+            renderText({
+              paste("NB : impossible d'afficher le lieu de sa mort car information inconnue")
+            })
+        }
+        ggiraph(code = print(displayMap())) #affichage map de base
+      })
   })
   
   #affichage de la carte
-  output$GoTmap <- renderggiraph(ggiraph(code = print(displayMap())))
+  output$GoTmap <-
+    renderggiraph(ggiraph(code = print(displayMap())))
   
   #A Propos (affichage mode modal (popup))
   observeEvent(input$aPropos, {
