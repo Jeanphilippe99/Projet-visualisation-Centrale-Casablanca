@@ -1,3 +1,5 @@
+#Coded by @Jeanphilippe99
+
 source("importFilesAndDatas.R")
 library(roxygen2)
 

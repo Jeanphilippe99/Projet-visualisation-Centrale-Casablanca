@@ -1,3 +1,5 @@
+#Coded by @PeggyAdjoumani
+
 source("importFilesAndDatas.R")
 
 #' getEpisodes est une fonction qui retourne les épisodes de la saison avec numSeas
