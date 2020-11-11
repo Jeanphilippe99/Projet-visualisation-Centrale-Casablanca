@@ -1,5 +1,4 @@
-#Coded by @JosueInitDev
-
+#
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
 # Find out more about building applications with Shiny here:
@@ -13,7 +12,7 @@ library(shiny)
 library(shinyalert)
 library(shinycssloaders)
 
-#episodes$idAndTitle <- paste(episodes$episodeNum, episodes$episodeTitle, sep=" ")
+episodes$idAndTitle <- paste(episodes$episodeNum, episodes$episodeTitle, sep=" ")
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   useShinyalert(),
@@ -49,7 +48,7 @@ ui <- fluidPage(
       selectInput(
         "episode",
         "Episode",
-        choices = episodes$episodeNum[episodes$seasonNum == 1],
+        choices = episodes$idAndTitle[episodes$seasonNum == 1],
         selected = 1
       ),
       radioButtons(
@@ -103,18 +102,19 @@ server <- function(input, output, session) {
     updateSelectInput(session,
                       "episode",
                       "Choisir l'épisode",
-                      choices = episodes$episodeNum[episodes$seasonNum == a])
+                      choices = episodes$idAndTitle[episodes$seasonNum == a])
     #updateSelectInput(episode, "User", choices = as.character(dat5[dat5$email==input$Select, date]))
   })
   
   
   #maj des données du select de personnage (car chaque saison et épisode à ses personnages)
   observe({
+    num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
     updateSelectInput(session,
                       "caractere",
                       "Nom du personnage",
                       choices = getCharacters(as.numeric(input$saison), 
-                                              as.numeric(input$episode)))
+                                              as.numeric(num)))
     #updateSelectInput(episode, "User", choices = as.character(dat5[dat5$email==input$Select, date]))
   })
   
@@ -133,7 +133,8 @@ server <- function(input, output, session) {
         }) #on efface le contenu de "alert2" car rien à afficher à ce endroit
       
       #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
-      theData = getLocations(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction getDeathLocations
+      num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
+      theData = getLocations(as.numeric(input$saison), as.numeric(num)) #appelle de la fonction getDeathLocations
       A = st_read("data/GoTRelease/ScenesLocations.shp", crs = 4326) #lecture des lieux des morts
       elt = A %>% inner_join(theData) #jointure sur location
       
@@ -160,7 +161,8 @@ server <- function(input, output, session) {
     else {
       #Morts
       #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
-      theData = getDeathLocations(as.numeric(input$saison), as.numeric(input$episode)) #appelle de la fonction getDeathLocations
+      num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
+      theData = getDeathLocations(as.numeric(input$saison), as.numeric(num)) #appelle de la fonction getDeathLocations
       A = st_read("data/GoTRelease/ScenesLocations.shp", crs = 4326) #lecture des lieux des morts
       elt = A %>% inner_join(theData) #jointure sur location
       
@@ -189,11 +191,12 @@ server <- function(input, output, session) {
   
   #Bouton qui affiche les lieux des scènes du caractère choisi (2ème bouton)
   observeEvent(input$btnSaisonEpisodeCaract, {
+    num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
     output$GoTmap <-
       renderggiraph(if (input$mortsOuScenes == "Scènes") {
         theData = getPathCharacter(as.numeric(input$saison),
-                             as.numeric(input$episode),
-                             input$caractere) #appelle de la fonction getPathCharacter
+                                   as.numeric(num),
+                                   input$caractere) #appelle de la fonction getPathCharacter
         if (nrow(theData) < 1) {
           #theData est vide (i.e en fonction de la saison, de l'épisode et du perso choisi, il n'y a pas de lieu à afficher)
           output$alert <- renderText({
@@ -212,7 +215,7 @@ server <- function(input, output, session) {
               "dans la saison",
               input$saison,
               "et épisode",
-              input$episode,
+              num,
               sep = " "
             )
           })
