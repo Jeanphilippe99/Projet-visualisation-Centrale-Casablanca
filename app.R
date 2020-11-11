@@ -13,6 +13,7 @@ library(shinyalert)
 library(shinycssloaders)
 
 episodes$idAndTitle <- paste(episodes$episodeNum, episodes$episodeTitle, sep=" ")
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   useShinyalert(),
@@ -115,10 +116,9 @@ server <- function(input, output, session) {
                       "Nom du personnage",
                       choices = getCharacters(as.numeric(input$saison), 
                                               as.numeric(num)))
-    #updateSelectInput(episode, "User", choices = as.character(dat5[dat5$email==input$Select, date]))
   })
   
-  #Bouton qui affiche les lieux des scènes et des morts (1er bouton)
+#' Bouton qui affiche les lieux des scènes et des morts (1er bouton)
   observeEvent(input$btnSaisonEpisode, {
     if (input$mortsOuScenes == "Scènes") {
       output$alert <-
@@ -132,18 +132,18 @@ server <- function(input, output, session) {
           paste("")
         }) #on efface le contenu de "alert2" car rien à afficher à ce endroit
       
-      #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
+#' Ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap 
+#' puis affichage
       num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
-      theData = getLocations(as.numeric(input$saison), as.numeric(num)) #appelle de la fonction getDeathLocations
-      A = st_read("data/GoTRelease/ScenesLocations.shp", crs = 4326) #lecture des lieux des morts
-      elt = A %>% inner_join(theData) #jointure sur location
+      theData = getLocations(as.numeric(input$saison), as.numeric(num)) 
+      elt = scenesLocations %>% inner_join(theData)
       
       B = displayMap() + geom_sf(
         data = elt,
         fill = "red",
         color = "red",
         size = 5
-      )
+      ) + geom_sf_interactive(data=elt, aes(tooltip = location), size=3)
       output$GoTmap <- renderggiraph(ggiraph(code = print(B)))
       
       output$alert <-
@@ -156,22 +156,23 @@ server <- function(input, output, session) {
         paste("")
       })
       output$table <-
-        renderTable(theData) #affichage en tableau
+        renderTable(theData) 
     }
     else {
       #Morts
       #Maintenant, ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap puis affichage
       num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
-      theData = getDeathLocations(as.numeric(input$saison), as.numeric(num)) #appelle de la fonction getDeathLocations
-      A = st_read("data/GoTRelease/ScenesLocations.shp", crs = 4326) #lecture des lieux des morts
-      elt = A %>% inner_join(theData) #jointure sur location
+      theData = getDeathLocations(as.numeric(input$saison), as.numeric(num)) 
+      elt = scenesLocations %>% inner_join(theData)
+      elt$tooltipInfo = paste(elt$location, paste(elt$morts,"mort(s)", sep = " "), sep = ": ")
       
       B = displayMap() + geom_sf(
         data = elt,
         fill = "red",
         color = "red",
         size = as.numeric(theData$morts) + 2
-      )
+      )+ geom_sf_interactive(data=elt, aes(tooltip = tooltipInfo))
+      
       output$GoTmap <- renderggiraph(ggiraph(code = print(B)))
       
       output$alert <-
@@ -225,16 +226,15 @@ server <- function(input, output, session) {
           output$table <-
             renderTable(theData) #affichage en tableau
         }
-        A = st_read("data/GoTRelease/ScenesLocations.shp", crs =
-                      4326) #lecture des lieux visités par le caractère
-        elt = A %>% inner_join(theData) #jointure sur location
+        
+        elt = scenesLocations %>% inner_join(theData)
         
         B = displayMap() + geom_sf(
           data = elt,
           fill = "red",
           color = "red",
           size = 5
-        )
+        )+ geom_sf_interactive(data = elt, aes(tooltip = location), size=3)
         ggiraph(code = print(B))
       }
       else {
