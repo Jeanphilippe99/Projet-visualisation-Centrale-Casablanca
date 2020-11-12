@@ -130,10 +130,11 @@ server <- function(input, output, session) {
       output$alert2 <-
         renderText({
           paste("")
-        }) #on efface le contenu de "alert2" car rien à afficher à ce endroit
+        }) 
       
-#' Ajout d'un geom_sf sur le graphe envoyé par la fonction displayMap 
-#' puis affichage
+#' Ajout de la couche contenant les lieux des scenes en fonctions de la saison
+#' et de l'episode
+
       num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
       theData = getLocations(as.numeric(input$saison), as.numeric(num)) 
       elt = scenesLocations %>% inner_join(theData)
@@ -143,8 +144,9 @@ server <- function(input, output, session) {
         fill = "red",
         color = "red",
         size = 5
-      ) + geom_sf_interactive(data=elt, aes(tooltip = location), size=3)
-      output$GoTmap <- renderggiraph(ggiraph(code = print(B)))
+      ) + geom_sf_interactive(data=elt, aes(tooltip = location, data_id = location), size=3)
+      
+      output$GoTmap <- renderggiraph(ggiraph(code = print(B), zoom_max = 5))
       
       output$alert <-
         renderText({
@@ -170,10 +172,10 @@ server <- function(input, output, session) {
         data = elt,
         fill = "red",
         color = "red",
-        size = as.numeric(theData$morts) + 2
+        size = as.numeric(elt$morts) + 3
       )+ geom_sf_interactive(data=elt, aes(tooltip = tooltipInfo))
       
-      output$GoTmap <- renderggiraph(ggiraph(code = print(B)))
+      output$GoTmap <- renderggiraph(ggiraph(code = print(B), zoom_max = 5))
       
       output$alert <-
         renderText({
@@ -235,7 +237,7 @@ server <- function(input, output, session) {
           color = "red",
           size = 5
         )+ geom_sf_interactive(data = elt, aes(tooltip = location), size=3)
-        ggiraph(code = print(B))
+        ggiraph(code = print(B), zoom_max = 5)
       }
       else {
         #else Morts
@@ -268,7 +270,7 @@ server <- function(input, output, session) {
   
   #affichage de la carte
   output$GoTmap <-
-    renderggiraph(ggiraph(code = print(displayMap())))
+    renderggiraph(ggiraph(code = print(displayMap()), zoom_max = 5))
   
   #A Propos (affichage mode modal (popup))
   observeEvent(input$aPropos, {
