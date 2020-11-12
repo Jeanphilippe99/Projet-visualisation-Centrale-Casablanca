@@ -1,4 +1,4 @@
-#Coded by @JosueInitDev and KOUASSI2297
+#' Coded by @JosueInitDev and @KOUASSI2297
 
 #**************************************************************
 #*C'est la seconde fonction******elle utilise la première******
@@ -38,6 +38,7 @@ getLocations <- function(theSaison, theEpisode) {
   return(elt)
 }
 
+#' Coded by @PeggyAdjoumani
 
 #' getDeathLocations : fonction qui prend la saison, l'épisode et renvoie 
 #' la liste des lieux où il y'a eu des morts
@@ -50,5 +51,33 @@ getDeathLocations <- function(theSaison, theEpisode) {
   return(elt)
 }
 
-#exemple
-#c=getDeathLocations(1,1)
+#' getEpisodes est une fonction qui retourne les épisodes de la saison avec numSeas
+#' comme paramètre correspondant ? la saison en questio
+getEpisodes <- function(numSeas) {
+  A <- episodes[episodes$seasonNum == numSeas, ]
+  return (A)
+}
+
+#'\code{getCharacters} '@return list of characters in episode according
+#'@param numseas season number and
+#'@param numEpisode episode number
+
+getCharacters <- function(x, y) {
+  D <- getEpisodes(x)
+  D <- D[D$episodeNum == y, ]
+  D <- D$episodeId
+  liste_scenes <-
+    lapply(D, function(z) {
+      B <- scenes[scenes$episodeId == z, ]
+      B <- B$sceneId
+    })
+  liste_scenes <- unlist(liste_scenes)
+  liste_acteurs <-
+    lapply(liste_scenes, function(e) {
+      T <- appearances[appearances$sceneId == e, ]
+      T <- T$name
+    })
+  
+  liste_acteurs <- unique(unlist(liste_acteurs))
+  return(liste_acteurs)
+}

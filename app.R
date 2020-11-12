@@ -4,7 +4,6 @@
 # Find out more about building applications with Shiny here:
 #    http://shiny.rstudio.com/
 
-source("getCharacters.R")
 source("displayMap.R")
 source("localizeFunctions.R")
 

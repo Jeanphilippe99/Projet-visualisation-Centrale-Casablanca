@@ -1,4 +1,4 @@
-#Coded by @Jeanphilippe99
+#' Coded by @Jeanphilippe99
 
 source("importFilesAndDatas.R")
 library(roxygen2)
@@ -58,7 +58,7 @@ names(cols) = spaces
 levels(allDatas$type) = spaces
 
 #'\code{displayMap} Consruire la map de got en fonction
-#'@param layerGeometry la couche donc la géometrie sera ajoutée et
+#'@param layerGeometry la couche donc la g?ometrie sera ajout?e et
 #'@param layerCol pour fixer la couleur de la couche
 #'@param layerFill pour fixer la couleur du remplissage
 #'@return une novelle map
