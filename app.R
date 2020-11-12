@@ -138,13 +138,15 @@ server <- function(input, output, session) {
       num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
       theData = getLocations(as.numeric(input$saison), as.numeric(num)) 
       elt = scenesLocations %>% inner_join(theData)
+      elt$same="same"
       
       B = displayMap() + geom_sf(
         data = elt,
         fill = "red",
         color = "red",
-        size = 5
-      ) + geom_sf_interactive(data=elt, aes(tooltip = location, data_id = location), size=3)
+        size = 4
+      ) + geom_sf_interactive(data=elt, aes(tooltip = location, data_id =same ), 
+                              size=2)
       
       output$GoTmap <- renderggiraph(ggiraph(code = print(B), zoom_max = 5))
       
@@ -167,13 +169,15 @@ server <- function(input, output, session) {
       theData = getDeathLocations(as.numeric(input$saison), as.numeric(num)) 
       elt = scenesLocations %>% inner_join(theData)
       elt$tooltipInfo = paste(elt$location, paste(elt$morts,"mort(s)", sep = " "), sep = ": ")
+      elt$same = "same"
       
       B = displayMap() + geom_sf(
         data = elt,
         fill = "red",
         color = "red",
         size = as.numeric(elt$morts) + 3
-      )+ geom_sf_interactive(data=elt, aes(tooltip = tooltipInfo))
+      )+ geom_sf_interactive(data=elt, aes(tooltip = tooltipInfo, 
+                                           data_id = same))
       
       output$GoTmap <- renderggiraph(ggiraph(code = print(B), zoom_max = 5))
       
@@ -230,13 +234,15 @@ server <- function(input, output, session) {
         }
         
         elt = scenesLocations %>% inner_join(theData)
+        elt$same = "same"
         
         B = displayMap() + geom_sf(
           data = elt,
           fill = "red",
           color = "red",
           size = 5
-        )+ geom_sf_interactive(data = elt, aes(tooltip = location), size=3)
+        )+ geom_sf_interactive(data = elt, aes(tooltip = location, 
+                                               data_id = same), size=3)
         ggiraph(code = print(B), zoom_max = 5)
       }
       else {
@@ -264,7 +270,7 @@ server <- function(input, output, session) {
               paste("NB : impossible d'afficher le lieu de sa mort car information inconnue")
             })
         }
-        ggiraph(code = print(displayMap())) #affichage map de base
+        ggiraph(code = print(displayMap()), zoom_max = 5) #affichage map de base
       })
   })
   
