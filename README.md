@@ -12,11 +12,11 @@ shiny::runApp()
 ```
 
 Don't forget to install necessary librairies; Use theses syntaxes:
--library(sf)
--library(ggplot2)
--library(dplyr)
--library(ggiraph)
--library(readr) .
+- library(sf)
+- library(ggplot2)
+- library(dplyr)
+- library(ggiraph)
+- library(readr) .
 
 ## Authors & supervisor
 The othors are :
