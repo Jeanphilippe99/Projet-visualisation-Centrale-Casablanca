@@ -107,7 +107,8 @@ server <- function(input, output, session) {
   })
   
   
-  #maj des données du select de personnage (car chaque saison et épisode à ses personnages)
+#' maj des données du select de personnage (car chaque saison et 
+#' épisode à ses personnages)
   observe({
     num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
     updateSelectInput(session,
@@ -196,25 +197,27 @@ server <- function(input, output, session) {
   })
   
   #Bouton qui affiche les lieux des scènes du caractère choisi (2ème bouton)
+  
   observeEvent(input$btnSaisonEpisodeCaract, {
-    num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
-    output$GoTmap <-
-      renderggiraph(if (input$mortsOuScenes == "Scènes") {
-        theData = getPathCharacter(as.numeric(input$saison),
+    #num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
+    output$GoTmap <- renderggiraph(
+        if (input$mortsOuScenes == "Scènes") {
+            num = episodes$episodeNum[episodes$idAndTitle==input$episode][1]
+        
+            theData = getPathCharacter(as.numeric(input$saison),
                                    as.numeric(num),
-                                   input$caractere) #appelle de la fonction getPathCharacter
+                                   input$caractere) 
         if (nrow(theData) < 1) {
           #theData est vide (i.e en fonction de la saison, de l'épisode et du perso choisi, il n'y a pas de lieu à afficher)
           output$alert <- renderText({
             paste("-----! Donnée vide, rien à afficher !-----")
           })
-          output$alert2 <-
-            renderText({
+          output$alert2 <-renderText({
               paste("Il se peut que la base de données ne contient pas d'information à ce sujet")
             })
         }
         else {
-          output$alert <- renderText({
+          output$alert <- renderText({ 
             paste(
               "Lieux des scènes de",
               input$caractere,
@@ -228,20 +231,26 @@ server <- function(input, output, session) {
           output$alert2 <- renderText({
             paste("")
           })
-          output$table <-
-            renderTable(theData) #affichage en tableau
+          output$table <- renderTable(theData) #affichage en tableau
         }
         
         elt = scenesLocations %>% inner_join(theData)
-        elt$same = "same"
+        if(nrow(elt)!=0) {
+          elt$same ="same"
+          B = displayMap() + geom_sf(
+            data = elt,
+            fill = "red",
+            color = "red",
+            size = 5
+          )+ geom_sf_interactive(data = elt, aes(tooltip = location, data_id = same), size=3)
+        }
+        else {
+          B = displayMap()
+          output$alert2 <- renderText({
+            paste("-----! La base de données ne contient pas d'information !-----")
+          })
+        }
         
-        B = displayMap() + geom_sf(
-          data = elt,
-          fill = "red",
-          color = "red",
-          size = 5
-        )+ geom_sf_interactive(data = elt, aes(tooltip = location, 
-                                               data_id = same), size=3)
         ggiraph(code = print(B), zoom_max = 5)
       }
       else {
@@ -264,8 +273,7 @@ server <- function(input, output, session) {
                   "!-----",
                   sep = " ")
           })
-          output$alert2 <-
-            renderText({
+          output$alert2 <- renderText({
               paste("NB : impossible d'afficher le lieu de sa mort car information inconnue")
             })
         }
@@ -274,8 +282,8 @@ server <- function(input, output, session) {
   })
   
   #affichage de la carte
-  output$GoTmap <-
-    renderggiraph(ggiraph(code = print(displayMap()), zoom_max = 5))
+  output$GoTmap <-renderggiraph(ggiraph(code = print(displayMap()), 
+                                        zoom_max = 5))
   
   #A Propos (affichage mode modal (popup))
   observeEvent(input$aPropos, {

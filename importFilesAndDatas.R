@@ -22,3 +22,4 @@ rivers = st_read("data/GoTRelease/Rivers.shp", crs=4326)
 roads = st_read("data/GoTRelease/Roads.shp", crs=4326)
 scenesLocations = st_read("data/GoTRelease/ScenesLocations.shp", crs=4326)
 wall = st_read("data/GoTRelease/Wall.shp",crs=4326)
+
